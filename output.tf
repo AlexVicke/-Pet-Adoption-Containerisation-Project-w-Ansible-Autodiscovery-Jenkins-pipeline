@@ -26,10 +26,10 @@ output "private_sn2_id" {
 #####################################################################
 
 output "keypair_name" {
-    value = aws_key_pair.PACAAD1_RAFV.key_name
+  value = aws_key_pair.PACAAD1_RAFV.key_name
 }
 output "keypair_id" {
-    value = aws_key_pair.PACAAD1_RAFV.id
+  value = aws_key_pair.PACAAD1_RAFV.id
 }
 
 
@@ -60,7 +60,7 @@ output "Bastion_host_id" {
 }
 
 output "Bastion_public_ip" {
-    value = aws_instance.PACAAD1_RAFV_Bastion_Host.public_ip
+  value = aws_instance.PACAAD1_RAFV_Bastion_Host.public_ip
 }
 
 
@@ -74,7 +74,7 @@ output "Jenkins_Host_id" {
 }
 
 output "Jenkins_private_ip" {
-    value = aws_instance.PACAAD1_RAFV_Jenkins_Host.private_ip
+  value = aws_instance.PACAAD1_RAFV_Jenkins_Host.private_ip
 }
 
 
@@ -88,7 +88,7 @@ output "Docker_Host_id" {
 }
 
 output "Docker_private_ip" {
-    value = aws_instance.PACAAD1_RAFV_Docker_Host.private_ip
+  value = aws_instance.PACAAD1_RAFV_Docker_Host.private_ip
 }
 
 output "Docker_ami" {
@@ -112,9 +112,10 @@ output "IAM_Instance_Profile_id" {
   value = aws_iam_instance_profile.PACAAD1_RAFV_Ansible_IAM_instance_profile.id
 }
 
-output "IAM_policy_document_AssumeRole_id" {
-  value = [aws_iam_policy_document.PACAAD1_RAFV_Ansible_IAM_role_policy.policy_arn]
-}
+#Correct output sintaxys as showing error**********
+# output "IAM_policy_document_AssumeRole_id" {
+#   value = aws_iam_policy_document.PACAAD1_RAFV_Ansible_IAM_role_policy.policy_arn
+# }
 
 output "IAM_role_policy_id" {
   value = aws_iam_policy.PACAAD1_RAFV_Ansible_IAM_policy.id
