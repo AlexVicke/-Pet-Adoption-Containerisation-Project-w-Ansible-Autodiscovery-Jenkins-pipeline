@@ -15,6 +15,16 @@ resource "aws_vpc" "PACAAD1_RAFV_VPC" {
   }
 }
 
+data "aws_vpc" "PACAAD1_RAFV_VPC" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_VPC"]
+  }
+  depends_on = [
+    aws_vpc.PACAAD1_RAFV_VPC
+  ]
+}
+
 ##################################################################
 # CREATE PUBLIC SUBNET1
 
@@ -27,7 +37,15 @@ resource "aws_subnet" "PACAAD1_RAFV_PUB_SN1" {
   }
 }
 
-
+data "aws_subnet" "PACAAD1_RAFV_PUB_SN1" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_PUB_SN1"]
+  }
+  depends_on = [
+    aws_subnet.PACAAD1_RAFV_PUB_SN1
+  ]
+}
 
 ##################################################################
 #CREATE PUBLIC SUBNET2
@@ -42,6 +60,17 @@ resource "aws_subnet" "PACAAD1_RAFV_PUB_SN2" {
   }
 }
 
+data "aws_subnet" "PACAAD1_RAFV_PUB_SN2" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_PUB_SN2"]
+  }
+  depends_on = [
+    aws_subnet.PACAAD1_RAFV_PUB_SN2
+  ]
+}
+
+
 ##################################################################
 #CREATE PRIVATE SUBNET1
 
@@ -55,6 +84,15 @@ resource "aws_subnet" "PACAAD1_RAFV_PRV_SN1" {
   }
 }
 
+data "aws_subnet" "PACAAD1_RAFV_PRV_SN1" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_PRV_SN1"]
+  }
+  depends_on = [
+    aws_subnet.PACAAD1_RAFV_PRV_SN1
+  ]
+}
 
 ##################################################################
 #CREATE PRIVATE SUBNET2
@@ -68,6 +106,17 @@ resource "aws_subnet" "PACAAD1_RAFV_PRV_SN2" {
     Name = var.PRV_SN2_name
   }
 }
+
+data "aws_subnet" "PACAAD1_RAFV_PRV_SN2" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_PRV_SN2"]
+  }
+  depends_on = [
+    aws_subnet.PACAAD1_RAFV_PRV_SN2
+  ]
+}
+
 
 ##################################################################
 #CREATE INTERNET GATEWAY
@@ -84,6 +133,7 @@ resource "aws_internet_gateway" "PACAAD1_RAFV_IGW" {
 
 resource "aws_eip" "PACAAD1_RAFV_EIP" {
   depends_on = [aws_internet_gateway.PACAAD1_RAFV_IGW]
+  vpc        = true
   tags = {
     Name = var.EIP_name
   }
@@ -93,7 +143,7 @@ resource "aws_eip" "PACAAD1_RAFV_EIP" {
 #CREATE NAT GATEWAY FOR PRIVATE SUBNET
 
 resource "aws_nat_gateway" "PACAAD1_RAFV_NAT_GW" {
-  depends_on = [aws_internet_gateway.PACAAD1_RAFV_IGW]
+  depends_on    = [aws_internet_gateway.PACAAD1_RAFV_IGW]
   allocation_id = aws_eip.PACAAD1_RAFV_EIP.id
   subnet_id     = aws_subnet.PACAAD1_RAFV_PUB_SN1.id
   tags = {
@@ -187,8 +237,8 @@ resource "aws_key_pair" "PACAAD1_RAFV" {
 resource "aws_security_group" "JenDoc_RAFV_SG" {
   name        = var.JenDoc_RAFV_SG_name
   description = "Allow TLS inbound traffic"
-  vpc_id      = var.vpc_id
-
+  vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
+  
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.ssh_port
@@ -224,12 +274,23 @@ resource "aws_security_group" "JenDoc_RAFV_SG" {
   }
 }
 
+data "aws_security_group" "JenDoc_RAFV_SG" {
+  filter {
+    name   = "tag:Name"
+    values = ["JenDoc_RAFV_SG"]
+  }
+  depends_on = [
+    aws_security_group.JenDoc_RAFV_SG
+  ]
+}
+
+
 # Provision Bastion_host and Ansible_node Security_Group
 resource "aws_security_group" "BasAns_RAFV_SG" {
   name        = var.BasAns_RAFV_SG_name
   description = "Allow TLS inbound traffic"
-  vpc_id      = var.vpc_id
-
+  vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
+  
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.ssh_port
@@ -250,12 +311,22 @@ resource "aws_security_group" "BasAns_RAFV_SG" {
   }
 }
 
+data "aws_security_group" "BasAns_RAFV_SG" {
+  filter {
+    name   = "tag:Name"
+    values = ["BasAns_RAFV_SG"]
+  }
+  depends_on = [
+    aws_security_group.BasAns_RAFV_SG
+  ]
+}
+
 # Create Database_Security Group
 resource "aws_security_group" "DB_RAFV_SG" {
   name        = var.DB_RAFV_SG_name
   description = "Allow TLS inbound traffic"
-  vpc_id      = var.vpc_id
-
+  vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
+  
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.mysql_port
@@ -275,6 +346,15 @@ resource "aws_security_group" "DB_RAFV_SG" {
   }
 }
 
+data "aws_security_group" "DB_RAFV_SG" {
+  filter {
+    name   = "tag:Name"
+    values = ["DB_RAFV_SG"]
+  }
+  depends_on = [
+    aws_security_group.DB_RAFV_SG
+  ]
+}
 
 
 
@@ -283,11 +363,13 @@ resource "aws_security_group" "DB_RAFV_SG" {
 #####################################################################
 
 resource "aws_instance" "PACAAD1_RAFV_Bastion_Host" {
-  ami                         = var.Bastion_rhel_ami
-  instance_type               = var.Bastion_instance_type
-  subnet_id                   = var.Bastion_subnet_id
-  key_name                    = var.keypair_name
-  vpc_security_group_ids      = [var.Bastion_vpc_security_group_ids]
+  ami           = var.Bastion_rhel_ami
+  instance_type = var.Bastion_instance_type
+  subnet_id     = aws_subnet.PACAAD1_RAFV_PUB_SN1.id
+  #subnet_id    = var.Bastion_subnet_id
+  key_name               = var.keypair_name
+  vpc_security_group_ids = [aws_security_group.BasAns_RAFV_SG.id]
+  #vpc_security_group_ids      = [var.Bastion_vpc_security_group_ids]
   associate_public_ip_address = var.Bastion_associate_public_ip_address
   provisioner "file" {
     source      = "~/Keypairs/AutodiscoveryPA"
@@ -297,7 +379,7 @@ resource "aws_instance" "PACAAD1_RAFV_Bastion_Host" {
     type        = "ssh"
     user        = "ec2-user"
     private_key = file("~/Keypairs/AutodiscoveryPA")
-    host        = self.public_ip
+    host        = "${self.public_ip}"
   }
   user_data = <<-EOF
 #!/bin/bash
@@ -308,6 +390,16 @@ EOF
   }
 }
 
+data "aws_instance" "PACAAD1_RAFV_Bastion_Host" {
+  filter {
+    name   = "tag:Name"
+    values = ["PACAAD1_RAFV_Bastion_Host"]
+  }
+  depends_on = [
+    aws_instance.PACAAD1_RAFV_Bastion_Host
+  ]
+}
+
 
 
 #####################################################################
@@ -315,14 +407,16 @@ EOF
 #####################################################################
 
 resource "aws_instance" "PACAAD1_RAFV_Jenkins_Host" {
-  ami                         = var.Jenkins_rhel_ami
-  instance_type               = var.Jenkins_instance_type
-  subnet_id                   = var.Jenkins_Subnet_id
-  key_name                    = var.keypair_name
-  vpc_security_group_ids      = [var.Jenkins_vpc_security_group_ids]  
+  ami           = var.Jenkins_rhel_ami
+  instance_type = var.Jenkins_instance_type
+  subnet_id     = aws_subnet.PACAAD1_RAFV_PRV_SN2.id
+  #subnet_id                   = var.Jenkins_Subnet_id
+  key_name               = var.keypair_name
+  vpc_security_group_ids = [aws_security_group.JenDoc_RAFV_SG.id]
+  #vpc_security_group_ids      = [var.Jenkins_vpc_security_group_ids]
   associate_public_ip_address = var.Jenkins_associate_public_ip_address
-  
-  user_data                   = <<-EOF
+
+  user_data = <<-EOF
 
 #!/bin/bash
 sudo yum update -y
@@ -371,12 +465,10 @@ data "aws_instance" "PACAAD1_RAFV_Jenkins_Host" {
     name   = "tag:Name"
     values = ["PACAAD1_RAFV_Jenkins_Host"]
   }
-
   depends_on = [
     aws_instance.PACAAD1_RAFV_Jenkins_Host
   ]
 }
-
 
 
 #####################################################################
@@ -385,14 +477,39 @@ data "aws_instance" "PACAAD1_RAFV_Jenkins_Host" {
 
 # Create Docker host Server
 resource "aws_instance" "PACAAD1_RAFV_Docker_Host" {
-  ami                         = var.Docker_rhel_ami
-  instance_type               = var.Docker_instance_type
-  subnet_id                   = var.Docker_Subnet_id
-  key_name                    = var.keypair_name
-  vpc_security_group_ids      = [var.Docker_vpc_security_group_ids]
+  ami           = var.Docker_rhel_ami
+  instance_type = var.Docker_instance_type
+  subnet_id     = aws_subnet.PACAAD1_RAFV_PRV_SN1.id
+  #subnet_id                   = var.Docker_Subnet_id
+  key_name               = var.keypair_name
+  vpc_security_group_ids = [aws_security_group.JenDoc_RAFV_SG.id]
+  #vpc_security_group_ids      = [var.Docker_vpc_security_group_ids]
   associate_public_ip_address = var.Docker_associate_public_ip_address
-  
-    tags = {
+
+  user_data = <<-EOF
+#!/bin/bash
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum update -y
+sudo yum install docker-ce -y
+sudo yum install docker-ce-cli -y
+sudo yum install containerd.io -y
+sudo yum install python3 -y
+sudo yum install python3-pip -y
+sudo alternatives --set python /usr/bin/python3
+sudo pip3 install docker-py 
+sudo systemctl start docker
+sudo systemctl enable docker
+echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
+sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
+sudo yum install newrelic-infra -y
+sudo usermod -aG docker ec2-user
+docker pull hello-world
+sudo hostnamectl set-hostname Docker
+EOF
+
+  tags = {
     Name = var.PACAAD1_RAFV_Docker_Host_Name
   }
 }
@@ -402,11 +519,11 @@ data "aws_instance" "PACAAD1_RAFV_Docker_Host" {
     name   = "tag:Name"
     values = ["PACAAD1_RAFV_Docker_Host"]
   }
-
-  depends_on = [
+    depends_on = [
     aws_instance.PACAAD1_RAFV_Docker_Host
   ]
 }
+
 
 #####################################################################
 ###############   IAM + Ansible MODULE    ###########################
@@ -485,15 +602,17 @@ EOF
 
 # Provision Ansible Host
 resource "aws_instance" "PACAAD1_RAFV_Ansible_Node" {
-  ami                         = var.Ansible_rhel_ami
-  instance_type               = var.Ansible_instance_type
-  key_name                    = var.keypair_name
-  subnet_id                   = var.Ansible_Subnet_id
-  vpc_security_group_ids      = [var.Ansible_vpc_security_group_ids]
+  ami           = var.Ansible_rhel_ami
+  instance_type = var.Ansible_instance_type
+  key_name      = var.keypair_name
+  subnet_id     = aws_subnet.PACAAD1_RAFV_PRV_SN1.id
+  #subnet_id                   = var.Ansible_Subnet_id
+  vpc_security_group_ids = [aws_security_group.BasAns_RAFV_SG.id]
+  # vpc_security_group_ids      = [var.Ansible_vpc_security_group_ids]
   associate_public_ip_address = var.Ansible_associate_public_ip_address
   iam_instance_profile        = aws_iam_instance_profile.PACAAD1_RAFV_Ansible_IAM_instance_profile.id
-  
-  user_data                   = <<-EOF
+
+  user_data = <<-EOF
 #!/bin/bash
 sudo yum update -y
 sudo yum upgrade -y
@@ -595,7 +714,7 @@ inventoryUpdate() {
 	do
 		ssh-keyscan -H $instance >> ~/.ssh/known_hosts
 echo "
-$instance ansible_user=ec2-user ansible_ssh_private_key_file=/etc/ansible/key.pem
+$instance ansible_user=ec2-user ansible_ssh_private_key_file=/etc/ansible/pap2anskey_rsa.pem
 " >> /etc/ansible/hosts
        done
 }
@@ -617,13 +736,232 @@ EOF
   }
 }
 
+
 data "aws_instance" "PACAAD1_RAFV_Ansible_Node" {
   filter {
     name   = "tag:Name"
     values = ["PACAAD1_RAFV_Ansible_Node"]
   }
-
   depends_on = [
     aws_instance.PACAAD1_RAFV_Ansible_Node
   ]
 }
+
+
+# #####################################################################
+# ###########   RUN THIS CODE AFTER 1ST RUN TO CREATE HA ##############
+# #####################################################################
+
+
+
+
+# ##################################################################
+# #Add a Jenkins Load Balancer
+# resource "aws_lb" "PACAAD1_RAFV_Jenkins_lb" {
+#   name               = var.Jenkins_Lb_name
+#   internal           = false
+#   load_balancer_type = "Network"
+#   security_groups            = [var.LB_securitygroup_id]
+#   subnets                    = [aws_subnet.PACAAD1_RAFV_PUB_SN1.id, aws_subnet.PACAAD1_RAFV_PUB_SN2.id]
+#   enable_deletion_protection = false
+
+#   listener {
+#     instance_port     = 8080
+#     instance_protocol = "http"
+#     lb_port           = 80
+#     lb_protocol       = "http"
+#   }
+
+#   health_check {
+#     healthy_threshold   = 2
+#     unhealthy_threshold = 2
+#     timeout             = 3
+#     target              = "TCP:8080"
+#     interval            = 30
+#   }
+
+#   instances                   = [aws_instance.PACAAD1_RAFV_Jenkins_Host.id]
+#   cross_zone_load_balancing   = true
+#   idle_timeout                = 400
+#   connection_draining         = true
+#   connection_draining_timeout = 400
+
+#   tags = {
+#     Name = var.Jenkins_Lb_name
+#   }
+# }
+
+
+# #Create a Target Group for Jenkins Load Balancer
+# resource "aws_lb_target_group" "PACAAD1_RAFV_Jenkins_Tg" {
+#   name     = var.Jenkins_Lb_Tg_name
+#   port     = 8080
+#   protocol = "HTTP"
+#   vpc_id   = var.vpc_id
+
+#   health_check {
+#     healthy_threshold   = 3
+#     unhealthy_threshold = 5
+#     interval            = 30
+#     timeout             = 5
+#     path                = "/"
+#   }
+# }
+
+# #WHY A GROUP ATTACHMENT AND LISTENER IS NOT NEEDED HERE?
+# #Create Target group attachment for Jenkins lb
+# resource "aws_lb_target_group_attachment" "PACAAD1_RAFV_Tg_Jenkins_att" {
+#   target_group_arn = aws_lb_target_group.PACAAD1_RAFV_Jenkins_Tg.arn
+#   target_id        = var.Jenkins_Host_id
+#   port             = 8080
+# }
+
+# #Create a Load Balancer listener
+# resource "aws_lb_listener" "PACAAD1_RAFV_nlb_listener" {
+#   load_balancer_arn = aws_lb.PACAAD1_RAFV_Jenkins_lb.arn
+#   port              = "80"
+#   protocol          = "HTTP"
+
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.PACAAD1_RAFV_Jenkins_Tg.arn
+#   }
+# }
+
+
+# #ADD an APPlication Load Balancer
+# resource "aws_lb" "PACAAD1_RAFV_Docker_alb" {
+#   name                       = var.docker_Lb_name
+#   internal                   = false
+#   load_balancer_type         = "application"
+#   security_groups            = [var.JenDoc_SG_id]
+#   subnets                    = [var.pub_sn1_id,var.pub_sn2_id]
+#   enable_deletion_protection = false
+# }
+# #Add a load balancer Listener
+# resource "aws_lb_listener" "PACAAD1_RAFV_alb_listener" {
+#   load_balancer_arn = aws_lb.PACAAD1_RAFV_Docker_alb.arn
+#   port              = "80"
+#   protocol          = "HTTP"
+
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.PACAAD1_RAFV_app_Tg.arn
+#   }
+# }
+# # Create a Target Group for application Load Balancer
+# resource "aws_lb_target_group" "PACAAD1_RAFV_app_Tg" {
+#   name     = var.Docker_Lb_Tg_name
+#   port     = 8080
+#   protocol = "HTTP"
+#   vpc_id   = var.vpc_id
+#   health_check {
+#     healthy_threshold   = 3
+#     unhealthy_threshold = 5
+#     interval            = 30
+#     timeout             = 5
+#     path                = "/"
+#   }
+# }
+
+
+# #Create Target group attachment for application lb
+# resource "aws_lb_target_group_attachment" "PACAAD1_RAFV_Tg_att" {
+#   target_group_arn = aws_lb_target_group.PACAAD1_RAFV_app_Tg.arn
+#   target_id        = var.docker_target_id
+#   port             = 8080
+# }
+
+
+
+
+# #####################################################################
+# ###################   AUTO SCALING GROUP   ##########################
+# #####################################################################
+
+
+# #Docker-launch-configuration
+# resource "aws_launch_configuration" "PACAAD1_RAFV_LaunchConfig" {
+#   name_prefix                 = var.name_prefix_lc
+#   image_id                    = var.ASG_image_id
+#   instance_type               = var.ASG_instance_type
+#   security_groups             = [var.ASG_vpc_security_group_ids]
+#   associate_public_ip_address = false
+#   key_name                    = var.keypair_name
+# user_data                   = <<-EOF
+# #!/bin/bash
+# sudo yum install -y yum-utils
+# sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+# sudo yum update -y
+# sudo yum install docker-ce -y
+# sudo yum install docker-ce-cli -y
+# sudo yum install containerd.io -y
+# sudo yum install python3 -y
+# sudo yum install python3-pip -y
+# sudo alternatives --set python /usr/bin/python3
+# sudo pip3 install docker-py
+# sudo systemctl start docker
+# sudo systemctl enable docker
+# echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
+# sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+# sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
+# sudo yum install newrelic-infra -y
+# sudo hostnamectl set-hostname dockerHostASG
+#   EOF
+
+# }
+
+# #Creating Autoscaling Group 
+# resource "aws_autoscaling_group" "PACAAD1_RAFV_ASG" {
+#   name                      = var.name_ASG
+#   desired_capacity          = var.ASG_desired_capacity
+#   max_size                  = var.ASG_max_size
+#   min_size                  = var.ASG_min_size
+#   health_check_grace_period = var.health_check_grace_period
+#   health_check_type         = var.health_check_type
+#   force_delete              = true
+#   launch_configuration      = aws_launch_configuration.PACAAD1_RAFV_LaunchConfig.name
+#   vpc_zone_identifier       = [var.vpc_zone_identifier]
+#  # target_group_arns         = [var.target_group_arns]
+#   tag {
+#     key                 = "Name"
+#     value               = var.ASG_tag_name
+#     propagate_at_launch = true
+#   }
+# }
+
+# #Creating Autoscaling Policy   
+# resource "aws_autoscaling_policy" "PACAAD1_RAFV_ASG_Pol" {
+#   name                   = var.ASG_policy_name
+#   policy_type            = "TargetTrackingScaling"
+#   adjustment_type        = "ChangeInCapacity"
+#   autoscaling_group_name = aws_autoscaling_group.PACAAD1_RAFV_ASG.name
+#   target_tracking_configuration {
+#     predefined_metric_specification {
+#       predefined_metric_type = "ASGAverageCPUUtilization"
+#     }
+#     target_value = var.ASG_Pol_target_value
+#   }
+# }
+
+
+# # #####################################################################
+# # #########################   ROUTE 53   ##############################
+# # #####################################################################
+
+# # # Create Domain name using Route 53
+# # resource "aws_route53_zone" "PACAAD1_RAFV_zone" {
+# #   name          = var.Domain_name
+# #   force_destroy = true
+# # }
+# # resource "aws_route53_record" "PACADEU1_www" {
+# #   zone_id = aws_route53_zone.PACAAD1_RAFV_zone.zone_id
+# #   name    = var.Domain_name
+
+# #     type    = "A"
+# #      alias {
+# #       name                   = var.target_dns_name
+# #       zone_id                = var.target_zone_id
+# #       evaluate_target_health = var.evaluate_target_health
+# #     }
+# # }
