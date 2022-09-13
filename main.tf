@@ -238,7 +238,7 @@ resource "aws_security_group" "JenDoc_RAFV_SG" {
   name        = var.JenDoc_RAFV_SG_name
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
-  
+
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.ssh_port
@@ -290,7 +290,7 @@ resource "aws_security_group" "BasAns_RAFV_SG" {
   name        = var.BasAns_RAFV_SG_name
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
-  
+
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.ssh_port
@@ -326,7 +326,7 @@ resource "aws_security_group" "DB_RAFV_SG" {
   name        = var.DB_RAFV_SG_name
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.PACAAD1_RAFV_VPC.id
-  
+
   ingress {
     description = "SSH from PACAAD1_RAFV_VPC"
     from_port   = var.mysql_port
@@ -379,7 +379,7 @@ resource "aws_instance" "PACAAD1_RAFV_Bastion_Host" {
     type        = "ssh"
     user        = "ec2-user"
     private_key = file("~/Keypairs/AutodiscoveryPA")
-    host        = "${self.public_ip}"
+    host        = self.public_ip
   }
   user_data = <<-EOF
 #!/bin/bash
@@ -418,42 +418,47 @@ resource "aws_instance" "PACAAD1_RAFV_Jenkins_Host" {
 
   user_data = <<-EOF
 
-#!/bin/bash
-sudo yum update -y
-sudo yum upgrade -y
-sudo yum install wget -y
-sudo yum install git -y
-sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-sudo yum install fontconfig -y
-sudo yum install java-11-openjdk -y
-sudo yum install jenkins -y
-sudo systemctl daemon-reload
-sudo systemctl start jenkins
-sudo yum install -y yum-utils
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-# sudo yum install docker-ce -y
-# sudo systemctl start docker
-echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
-sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
-sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
-sudo yum install newrelic-infra -y
-sudo yum install sshpass -y
-sudo su
-echo Admin123@ | passwd ec2-user --stdin
-echo "ec2-user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-sed -ie 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
-sudo service sshd reload
-sudo chmod -R 700 .ssh/
-sudo chown -R ec2-user:ec2-user .ssh/
-sudo su - ec2-user -c "ssh-keygen -f ~/.ssh/jenkinskey_rsa -t rsa -b 4096 -m PEM -N ''"
-sudo bash -c ' echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
-
-sudo usermod -aG docker jenkins
-sudo usermod -aG docker jenkins ec2-user
-sudo service sshd restart
-sudo hostnamectl set-hostname Jenkins
-EOF
+  #!/bin/bash
+  sudo yum update -y
+  sudo yum upgrade -y
+  sudo yum install wget -y
+  sudo yum install git -y
+  sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+  sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+  sudo yum install fontconfig -y
+  sudo yum install java-11-openjdk -y
+  sudo yum install jenkins -y
+  sudo systemctl daemon-reload
+  sudo systemctl start jenkins
+  sudo systemctl enable jenkins
+  sudo yum install -y yum-utils
+  sudo yum install maven -y
+  sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  sudo yum install docker-ce -y
+  sudo yum install docker-ce-cli -y
+  sudo yum install containerd.io -y
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
+  sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+  sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
+  sudo yum install newrelic-infra -y
+  sudo yum install sshpass -y
+  sudo su
+  echo Admin123@ | passwd ec2-user --stdin
+  echo "ec2-user ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+  sed -ie 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+  sudo service sshd reload
+  sudo chmod -R 700 .ssh/
+  sudo chown -R ec2-user:ec2-user .ssh/
+  sudo su - ec2-user -c "ssh-keygen -f ~/.ssh/jenkinskey_rsa -t rsa -b 4096 -m PEM -N ''"
+  sudo bash -c ' echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
+  
+  sudo usermod -aG docker jenkins
+  sudo usermod -aG docker ec2-user
+  sudo service sshd restart
+  sudo hostnamectl set-hostname Jenkins
+  EOF
 
   tags = {
     Name = var.PACAAD1_RAFV_Jenkins_Host_Name
@@ -486,28 +491,28 @@ resource "aws_instance" "PACAAD1_RAFV_Docker_Host" {
   #vpc_security_group_ids      = [var.Docker_vpc_security_group_ids]
   associate_public_ip_address = var.Docker_associate_public_ip_address
 
-  user_data = <<-EOF
-#!/bin/bash
-sudo yum install -y yum-utils
-sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-sudo yum update -y
-sudo yum install docker-ce -y
-sudo yum install docker-ce-cli -y
-sudo yum install containerd.io -y
-sudo yum install python3 -y
-sudo yum install python3-pip -y
-sudo alternatives --set python /usr/bin/python3
-sudo pip3 install docker-py 
-sudo systemctl start docker
-sudo systemctl enable docker
-echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
-sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
-sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
-sudo yum install newrelic-infra -y
-sudo usermod -aG docker ec2-user
-docker pull hello-world
-sudo hostnamectl set-hostname Docker
-EOF
+    user_data = <<-EOF
+  #!/bin/bash
+  sudo yum install -y yum-utils
+  sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+  sudo yum update -y
+  sudo yum install docker-ce -y
+  sudo yum install docker-ce-cli -y
+  sudo yum install containerd.io -y
+  sudo yum install python3.8 -y
+  sudo yum install python3-pip -y
+  sudo alternatives --set python /usr/bin/python3.8
+  sudo pip3 install docker-py 
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
+  sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
+  sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
+  sudo yum install newrelic-infra -y
+  sudo usermod -aG docker ec2-user
+  sudo docker pull hello-world
+  sudo hostnamectl set-hostname Docker
+  EOF
 
   tags = {
     Name = var.PACAAD1_RAFV_Docker_Host_Name
@@ -519,7 +524,7 @@ data "aws_instance" "PACAAD1_RAFV_Docker_Host" {
     name   = "tag:Name"
     values = ["PACAAD1_RAFV_Docker_Host"]
   }
-    depends_on = [
+  depends_on = [
     aws_instance.PACAAD1_RAFV_Docker_Host
   ]
 }
@@ -624,12 +629,12 @@ pip3 install ansible --user
 sudo chown ec2-user:ec2-user /etc/ansible
 sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
 sudo yum install -y yum-utils
-#NEW RELIC SETUP
+echo #NEW RELIC SETUP
 echo "license_key: 18b989848e83ee998df70e98b20b815c02b0NRAL" | sudo tee -a /etc/newrelic-infra.yml
 sudo curl -o /etc/yum.repos.d/newrelic-infra.repo https://download.newrelic.com/infrastructure_agent/linux/yum/el/7/x86_64/newrelic-infra.repo
 sudo yum -q makecache -y --disablerepo='*' --enablerepo='newrelic-infra'
 sudo yum install newrelic-infra -y
-#SSH INSTALLATION
+echo #SSH INSTALLATION
 sudo yum install -y http://mirror.centos.org/centos/7/extras/x86_64/Packages/sshpass-1.06-2.el7.x86_64.rpm
 sudo yum install sshpass -y
 sudo su
@@ -643,24 +648,38 @@ sudo su - ec2-user -c "ssh-keygen -f ~/.ssh/pap2anskey_rsa -t rsa -N ''"
 sudo bash -c ' echo "StrictHostKeyChecking No" >> /etc/ssh/ssh_config'
 sudo su - ec2-user -c 'sshpass -p "Admin123@" ssh-copy-id -i /home/ec2-user/.ssh/pap2anskey_rsa.pub ec2-user@${data.aws_instance.PACAAD1_RAFV_Docker_Host.public_ip} '
 ssh-copy-id -i /home/ec2-user/.ssh/pap2anskey_rsa.pub ec2-user@localhost
-#UNZIP INSTALLATION
-sudo dnf install unzip
-#AWS CLI SETUP
+echo #UNZIP INSTALLATION
+sudo dnf install unzip -y
+echo #AWS CLI SETUP
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install
 ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
 sudo ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli --update
 sudo ln -svf /usr/local/bin/aws /usr/bin/aws
-#DOCKER HUB CONFIGURATION
+echo #DOCKER HUB CONFIGURATION
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 sudo yum install docker-ce -y
 sudo systemctl start docker
+sudo systemctl enable docker
 sudo usermod -aG docker ec2-user
-#CHANGE OWNERSHIP OF DIRECTORY TO EC2-USER
-cd /etc
-sudo chown ec2-user:ec2-user /ansible/hosts
-#CONFIGURATION OF PLAYBOOK FOR THIS INSTANCE
+sudo yum install vim -y
+echo #CHANGE OWNERSHIP OF DIRECTORY TO EC2-USER
+sudo chown -R ec2-user:ec2-user /etc
+touch Myplaybook.yaml
+touch discovery.sh 
+sudo chmod 755 discovery.sh
+touch /etc/ansible/ips.list
+sudo chmod 755 /etc/ansible/ips.list
+sudo chown -R ec2-user:ec2-user /etc/ansible/ips.list
+
+touch key.pem 
+sudo chmod 400 key.pem
+# echo #CHANGE OWNERSHIP OF DIRECTORY TO EC2-USER
+# sudo chown ec2-user:ec2-user /etc/ansible/hosts
+sudo chown -R ec2-user:ec2-user /etc/ansible && chmod +x /etc/ansible
+
+echo #CONFIGURATION OF PLAYBOOK FOR THIS INSTANCE
 cat <<EOT>> /etc/ansible/Myplaybook.yaml
 ---
 - hosts: webservers
@@ -698,23 +717,26 @@ cat <<EOT>> /etc/ansible/Myplaybook.yaml
         ports:
          - "8080:8085"
 EOT
-sudo hostnamectl set-hostname Ansible
+
 #AUTODISCOVERY SETUP
+# This script automatically update ansible host inventory
+cat <<EOT>> /etc/ansible/discovery.sh
+#!/bin/bash
 # This script automatically update ansible host inventory
 TAG='Tomcat-test'
 AWSBIN='/usr/local/bin/aws'
 awsDiscovery() {
-	$AWSBIN ec2 describe-instances --filters Name=tag:aws:autoscaling:groupName,Values=dockerHostASG \
-		--query Reservations[].Instances[].NetworkInterfaces[*].{PrivateIpAddresses:PrivateIpAddress} > /etc/ansible/ips.list
+	\$AWSBIN ec2 describe-instances --filters Name=tag:aws:autoscaling:groupName,Values=dockerHostASG \
+		--query Reservations[*].Instances[*].NetworkInterfaces[*].{PrivateIpAddresses:PrivateIpAddress} > /etc/ansible/ips.list
 	}
 inventoryUpdate() {
 	echo > /etc/ansible/hosts 
   	echo [webservers] > /etc/ansible/hosts
 	for instance in `cat /etc/ansible/ips.list`
 	do
-		ssh-keyscan -H $instance >> ~/.ssh/known_hosts
+		ssh-keyscan -H \$instance >> ~/.ssh/known_hosts
 echo "
-$instance ansible_user=ec2-user ansible_ssh_private_key_file=/etc/ansible/pap2anskey_rsa.pem
+\$instance ansible_user=ec2-user ansible_ssh_private_key_file=/etc/ansible/key.pem
 " >> /etc/ansible/hosts
        done
 }
@@ -726,9 +748,9 @@ instanceUpdate() {
 awsDiscovery
 inventoryUpdate
 #instanceUpdate
-sudo chmod 755 discovery.sh /etc/ansible
-ssh-keygen 
+EOT
 
+sudo hostnamectl set-hostname Ansible
 EOF
 
   tags = {
